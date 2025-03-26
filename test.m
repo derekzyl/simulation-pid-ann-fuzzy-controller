@@ -70,9 +70,9 @@ heat_dissipated = zeros(1, n_samples);
 %% Controller Setup
 
 % 1. PID Controller
-pid.Kp = 150;                          	% Proportional gain
-pid.Ki = 15;                           	% Integral gain
-pid.Kd = 10;                           	% Derivative gain
+pid.Kp = 250;                          	% Proportional gain
+pid.Ki = 25;                           	% Integral gain
+pid.Kd = 15;                           	% Derivative gain
 pid.error_sum = 0;                     	% Initialize error sum for integral term
 pid.last_error = 0;                    	% Initialize last error for derivative term
 
@@ -157,6 +157,8 @@ for controller_idx = 1:length(controllers)
        	 
         	% Evaluate fuzzy rules
         	output = evalfis([error, error_rate], fis);
+
+			% output = evalfis(fis,[error, error_rate]);
        	 
         	% Scale output to pump speed range
         	pump_speed = output * params.pump.max_speed;
@@ -331,8 +333,10 @@ function ann = trainANNController(params)
 	net = feedforwardnet([10 5]); % 10 neurons in first hidden layer, 5 in second
 	net.trainFcn = 'trainlm'; 	% Levenberg-Marquardt backpropagation
 	net.trainParam.epochs = 1000;
-	net.trainParam.goal = 1e-5;
-	net.trainParam.min_grad = 1e-7;
+	net.trainParam.goal = 1e-4;  % Loosen the goal
+	net.trainParam.min_grad = 1e-5;  % Loosen the minimum gradient
+	net.trainParam.mu_max = 1e10;  % Increase maximum mu
+	net.trainParam.showWindow = true;  % Show training window
     
 	% Train the neural network
 	[net, tr] = train(net, inputs_normalized', outputs');
