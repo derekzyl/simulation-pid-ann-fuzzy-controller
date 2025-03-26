@@ -4,7 +4,7 @@
 % The simulation includes models for water pump dynamics, heat transfer mechanisms,
 % and engine temperature regulation.
 
-
+clear all;
 close all;
 clc;
 
@@ -102,14 +102,8 @@ for controller_idx = 1:length(controllers)
     controller_type = controllers{controller_idx};
     
     % Reset initial conditions
-  
-    
-
-
-
-    % In your simulation loop:
-    T_engine_current = min(max(T_engine_current, params.engine.ambient_temp), params.engine.max_temp);
-    T_coolant_current = min(max(T_coolant_current, params.engine.ambient_temp), params.engine.max_temp);
+    T_engine_current = params.engine.ambient_temp;
+    T_coolant_current = params.engine.ambient_temp;
     flow_rate_current = params.pump.min_flow_rate;
     pid.error_sum = 0;
     pid.last_error = 0;
@@ -166,9 +160,7 @@ for controller_idx = 1:length(controllers)
             normalized_input = (input_data - ann.input_min) ./ (ann.input_max - ann.input_min);
             
             % Get ANN output 
-            % todo:  i am replacing this
-            % ann_output = sim(ann.net, normalized_input');
-            ann_output = ann.net(normalized_input);  % Column vector input
+            ann_output = sim(ann.net, normalized_input');
             
             % Denormalize output to get pump speed
             pump_speed = ann_output * (params.pump.max_speed - 0) + 0;
@@ -264,133 +256,65 @@ function fis = setupFuzzyController()
     fis = addRule(fis, [rule1; rule2; rule3; rule4; rule5; rule6]);
 end
 
-% % Function to train ANN Controller
-% function ann = trainANNController(params)
-%     % Generate training data
-%     n_samples = 1000;
-    
-%     % Input ranges
-%     temp_range = [params.engine.ambient_temp, params.engine.max_temp];
-%     load_range = [0.5, 2.0];
-%     ambient_temp_range = [params.engine.ambient_temp - 10, params.engine.ambient_temp + 20];
-    
-%     % Generate random inputs within ranges
-%     engine_temps = temp_range(1) + (temp_range(2) - temp_range(1)) * rand(n_samples, 1);
-%     engine_loads = load_range(1) + (load_range(2) - load_range(1)) * rand(n_samples, 1);
-%     ambient_temps = ambient_temp_range(1) + (ambient_temp_range(2) - ambient_temp_range(1)) * rand(n_samples, 1);
-    
-%     % Create input matrix
-%     inputs = [engine_temps, engine_loads, ambient_temps];
-    
-%     % Calculate ideal pump speeds for each input combination
-%     % This is a simplified model for training - in a real system, you'd use actual data
-%     outputs = zeros(n_samples, 1);
-%     for i = 1:n_samples
-%         % Higher engine temperature -> higher pump speed
-%         temp_factor = (engine_temps(i) - params.engine.optimal_temp) / 20;
-        
-%         % Higher load -> higher pump speed
-%         load_factor = engine_loads(i) - 1;
-        
-%         % Higher ambient temperature -> higher pump speed
-%         ambient_factor = (ambient_temps(i) - params.engine.ambient_temp) / 30;
-        
-%         % Combined factors with some nonlinearity (simplified model)
-%         ideal_speed = 0.5 + 0.5 * (temp_factor + load_factor + ambient_factor);
-        
-%         % Constrain to [0, 1] range
-%         outputs(i) = min(max(ideal_speed, 0), 1);
-%     end
-    
-%     % Store min/max for normalization during inference
-%     ann.input_min = min(inputs)';
-%     ann.input_max = max(inputs)';
-    
-%     % Normalize inputs for training
-%     inputs_normalized = (inputs - repmat(ann.input_min', n_samples, 1)) ./ ...
-%                         repmat(ann.input_max' - ann.input_min', n_samples, 1);
-    
-%     % Create and configure neural network
-%     net = feedforwardnet([10 5]); % 10 neurons in first hidden layer, 5 in second
-%     net.trainFcn = 'trainlm';     % Levenberg-Marquardt backpropagation
-%     % In the trainANNController function, modify the network training parameters:
-%     net.trainParam.epochs = 1000;     % Maximum epochs
-%     net.trainParam.goal = 1e-5;       % Performance goal
-%     net.trainParam.min_grad = 1e-7;   % Minimum gradient
-%     net.trainParam.max_fail = 20;     % Maximum validation failures
-%     net.trainParam.show = 25;         % Show progress every 25 epochs
-%     net.trainParam.time = Inf;        % No time limit
-
-    
-%     % Train the neural network
-%     [net, tr] = train(net, inputs_normalized', outputs');
-    
-%     % Store network in output structure
-%     ann.net = net;
-%     ann.training_record = tr;
-% end
-
-
-
+% Function to train ANN Controller
 function ann = trainANNController(params)
-    % Generate comprehensive training data
-    n_samples = 10000;
+    % Generate training data
+    n_samples = 1000;
     
-    % Input ranges with wider coverage
-    temp_range = [params.engine.ambient_temp-15, params.engine.max_temp+5];
-    load_range = [0.3, 2.2];
-    ambient_temp_range = [params.engine.ambient_temp-15, params.engine.ambient_temp+25];
+    % Input ranges
+    temp_range = [params.engine.ambient_temp, params.engine.max_temp];
+    load_range = [0.5, 2.0];
+    ambient_temp_range = [params.engine.ambient_temp - 10, params.engine.ambient_temp + 20];
     
-    % Generate varied training data
-    engine_temps = [linspace(temp_range(1), temp_range(2), 1000), ...
-                   params.engine.optimal_temp * ones(1, 3000), ...
-                   temp_range(1) + (temp_range(2)-temp_range(1)) * rand(1, n_samples-4000)];
+    % Generate random inputs within ranges
+    engine_temps = temp_range(1) + (temp_range(2) - temp_range(1)) * rand(n_samples, 1);
+    engine_loads = load_range(1) + (load_range(2) - load_range(1)) * rand(n_samples, 1);
+    ambient_temps = ambient_temp_range(1) + (ambient_temp_range(2) - ambient_temp_range(1)) * rand(n_samples, 1);
     
-    engine_loads = [linspace(load_range(1), load_range(2), 1000), ...
-                   1.0 * ones(1, 3000), ...
-                   load_range(1) + (load_range(2)-load_range(1)) * rand(1, n_samples-4000)];
+    % Create input matrix
+    inputs = [engine_temps, engine_loads, ambient_temps];
     
-    ambient_temps = [linspace(ambient_temp_range(1), ambient_temp_range(2), 1000), ...
-                    params.engine.ambient_temp * ones(1, 3000), ...
-                    ambient_temp_range(1) + (ambient_temp_range(2)-ambient_temp_range(1)) * rand(1, n_samples-4000)];
+    % Calculate ideal pump speeds for each input combination
+    % This is a simplified model for training - in a real system, you'd use actual data
+    outputs = zeros(n_samples, 1);
+    for i = 1:n_samples
+        % Higher engine temperature -> higher pump speed
+        temp_factor = (engine_temps(i) - params.engine.optimal_temp) / 20;
+        
+        % Higher load -> higher pump speed
+        load_factor = engine_loads(i) - 1;
+        
+        % Higher ambient temperature -> higher pump speed
+        ambient_factor = (ambient_temps(i) - params.engine.ambient_temp) / 30;
+        
+        % Combined factors with some nonlinearity (simplified model)
+        ideal_speed = 0.5 + 0.5 * (temp_factor + load_factor + ambient_factor);
+        
+        % Constrain to [0, 1] range
+        outputs(i) = min(max(ideal_speed, 0), 1);
+    end
     
-    % Create properly formatted input matrix (3 features × n_samples)
-    inputs = [engine_temps; engine_loads; ambient_temps]; % 3×N
+    % Store min/max for normalization during inference
+    ann.input_min = min(inputs)';
+    ann.input_max = max(inputs)';
     
-    % Calculate target outputs (1×N)
-    outputs = 0.5 + 0.5 * tanh(...
-        (engine_temps - params.engine.optimal_temp)/20 + ...
-        (engine_loads - 1) + ...
-        (ambient_temps - params.engine.ambient_temp)/30);
-    outputs = max(min(outputs, 1), 0); % Clip to [0,1] range
+    % Normalize inputs for training
+    inputs_normalized = (inputs - repmat(ann.input_min', n_samples, 1)) ./ ...
+                        repmat(ann.input_max' - ann.input_min', n_samples, 1);
     
     % Create and configure neural network
-    net = feedforwardnet([15 10], 'trainlm'); % 2 hidden layers
-    
-    % Configure network properties
-    net.inputs{1}.size = 3; % Explicitly set 3 input features
+    net = feedforwardnet([10 5]); % 10 neurons in first hidden layer, 5 in second
+    net.trainFcn = 'trainlm';     % Levenberg-Marquardt backpropagation
     net.trainParam.epochs = 1000;
     net.trainParam.goal = 1e-5;
-    % net.trainParam.min_grad = 1e-6;
-    net.trainParam.max_fail = 50;  % Increased from default 6
-    net.trainParam.min_grad = 1e-10; % More lenient than default 1e-5
-    net.trainParam.mu_max = 1e20;  % Allow larger learning rates
-    net.divideParam.trainRatio = 0.7;
-    net.divideParam.valRatio = 0.15;
-    net.divideParam.testRatio = 0.15;
+    net.trainParam.min_grad = 1e-7;
     
-    % Train the network
-    [net, ~] = train(net, inputs, outputs);
+    % Train the neural network
+    [net, tr] = train(net, inputs_normalized', outputs');
     
-    % Store network and normalization parameters
+    % Store network in output structure
     ann.net = net;
-    ann.input_min = min(inputs, [], 2); % Column vector of minima
-    ann.input_max = max(inputs, [], 2); % Column vector of maxima
-    
-    % Verify network architecture
-    disp(['Trained ANN with ' num2str(net.inputs{1}.size) ' inputs']);
-    disp(['and ' num2str(net.layers{end}.size) ' outputs']);
-    view(net);
+    ann.training_record = tr;
 end
 
 % Function to evaluate controller performance
@@ -696,58 +620,28 @@ function [T_engine, control_signal, power_consumption] = simulateController(cont
             error = params.engine.optimal_temp - T_engine(i-1);
             error_rate = (error - (params.engine.optimal_temp - T_engine(max(1, i-2)))) / sample_time;
             
-            % Scale error rate to fit fuzzy input range [-10 10]
-            error_rate = max(min(error_rate, 10), -10);
-            
             % Evaluate fuzzy rules
-            output = evalfis(fis, [error, error_rate]);
+            output = evalfis([error, error_rate], fis);
             
             % Scale output to pump speed range
             pump_speed = output * params.pump.max_speed;
             control_signal(i) = pump_speed;
-       
-
-
             
-        % elseif strcmp(controller_type, 'ANN')
-        %     % ANN control
-        %     % Prepare inputs for ANN
-        %     input_data = [T_engine(i-1); 
-        %                   load_profile(i-1); 
-        %                   ambient_temp_profile(i-1)];
-            
-        %     % Normalize inputs based on training data ranges
-        %     normalized_input = (input_data - ann.input_min) ./ (ann.input_max - ann.input_min);
-            
-        %     % Get ANN output
-        %     ann_output = sim(ann.net, normalized_input');
-            
-        %     % Denormalize output to get pump speed
-        %     pump_speed = ann_output * params.pump.max_speed;
-        %     control_signal(i) = pump_speed;
-
-        % In your simulation loop where you use the ANN:
         elseif strcmp(controller_type, 'ANN')
-            % ANN control - prepare input data correctly
-            current_input = [T_engine_current;          % Engine temperature
-                            load_profile(i-1);          % Current load
-                            ambient_temp_profile(i-1)]; % Ambient temperature
+            % ANN control
+            % Prepare inputs for ANN
+            input_data = [T_engine(i-1); 
+                          load_profile(i-1); 
+                          ambient_temp_profile(i-1)];
             
-            % Verify input dimensions
-            if numel(current_input) ~= numel(ann.input_min)
-                error('Input dimension mismatch. Expected %d features, got %d', ...
-                    numel(ann.input_min), numel(current_input));
-            end
+            % Normalize inputs based on training data ranges
+            normalized_input = (input_data - ann.input_min) ./ (ann.input_max - ann.input_min);
             
-            % Normalize inputs (make sure ann.input_min and ann.input_max are column vectors)
-            normalized_input = (current_input - ann.input_min) ./ (ann.input_max - ann.input_min);
+            % Get ANN output
+            ann_output = sim(ann.net, normalized_input');
             
-            % Get ANN output - ensure we're using the correct dimensions
-            ann_output = ann.net(normalized_input); % Using direct network call
-            
-            % Scale to pump speed range
+            % Denormalize output to get pump speed
             pump_speed = ann_output * params.pump.max_speed;
-            pump_speed = max(min(pump_speed, params.pump.max_speed), params.pump.min_speed);
             control_signal(i) = pump_speed;
         end
         

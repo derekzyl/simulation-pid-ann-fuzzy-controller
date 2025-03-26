@@ -1,3 +1,27 @@
+> In fuzzy.internal.utility.throwWarning (line 17)
+In fuzzy.internal.utility.evalfis (line 116)
+In evalfis (line 98)
+In new (line 146)
+Warning: Input 2 expects a value in range [-10 10], but has a value of -484.966.
+> In fuzzy.internal.utility.throwWarning (line 17)
+In fuzzy.internal.utility.evalfis (line 116)
+In evalfis (line 98)
+In new (line 146)
+Warning: Input 2 expects a value in range [-10 10], but has a value of -485.029.
+> In fuzzy.internal.utility.throwWarning (line 17)
+In fuzzy.internal.utility.evalfis (line 116)
+In evalfis (line 98)
+In new (line 146)
+Warning: Input 2 expects a value in range [-10 10], but has a value of -485.093.
+> In fuzzy.internal.utility.throwWarning (line 17)
+In fuzzy.internal.utility.evalfis (line 116)
+In evalfis (line 98)
+In new (line 146)
+Warning: Input 2 expects a value in range [-10 10], but has a value of -485.156.
+> In fuzzy.internal.utility.throwWarning (line 17)
+In fuzzy.internal.utility.evalfis (line 116)
+In evalfis (line 98)
+In new (line 146)
 Warning: Input 2 expects a value in range [-10 10], but has a value of -485.22.
 > In fuzzy.internal.utility.throwWarning (line 17)
 In fuzzy.internal.utility.evalfis (line 116)
