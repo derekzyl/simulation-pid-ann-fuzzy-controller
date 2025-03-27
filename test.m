@@ -332,10 +332,14 @@ function ann = trainANNController(params)
 	% Create and configure neural network
 	net = feedforwardnet([10 5]); % 10 neurons in first hidden layer, 5 in second
 	net.trainFcn = 'trainlm'; 	% Levenberg-Marquardt backpropagation
+	% In trainANNController():
 	net.trainParam.epochs = 1000;
-	net.trainParam.goal = 1e-4;  % Loosen the goal
-	net.trainParam.min_grad = 1e-5;  % Loosen the minimum gradient
-	net.trainParam.mu_max = 1e10;  % Increase maximum mu
+	net.trainParam.goal = 1e-6;       % More stringent goal
+	net.trainParam.min_grad = 1e-7;    % Smaller gradient threshold
+	net.trainParam.max_fail = 20;      % Allow more validation failures
+	net.trainParam.mu = 0.001;         % Initial learning rate
+	net.trainParam.mu_dec = 0.1;       % Learning rate decrease factor
+	net.trainParam.mu_inc = 10;        % Learning rate increase factor
 	net.trainParam.showWindow = true;  % Show training window
     
 	% Train the neural network
